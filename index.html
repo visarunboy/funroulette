@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Весёлая рулетка: чем заняться?</title>
+  <meta name="theme-color" content="#7c3aed" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0f1021;
+      --card: #1b1d3a;
+      --accent: #ffd166;
+      --accent2: #7c3aed;
+      --accent3: #06d6a0;
+      --text: #e5e7eb;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: 'Rubik', sans-serif;
+      color:var(--text);
+      background:radial-gradient(1200px 800px at 10% -20%, rgba(124,58,237,.25), transparent 60%),
+        radial-gradient(1000px 600px at 90% 120%, rgba(6,214,160,.2), transparent 60%),
+        linear-gradient(180deg, #0b0c1a, #0f1021 50%, #0b0c1a);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      min-height:100vh;
+      overflow-x:hidden;
+      padding:20px;
+    }
+    h1{
+      font-size:clamp(22px,4vw,40px);
+      font-weight:800;
+      margin:0;
+      text-align:center;
+    }
+    .subtitle{text-align:center;opacity:.8;margin:6px 0 24px}
+    .wheel-wrap{position:relative;display:flex;justify-content:center;align-items:center;width:min(90vw,600px);aspect-ratio:1/1;}
+    canvas{width:100%;height:100%;border-radius:50%;display:block;}
+    .pin{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:22px solid var(--accent);filter:drop-shadow(0 4px 6px rgba(0,0,0,.4));}
+    .center-cap{position:absolute;inset:auto;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle at 30% 30%, #fff, #ffe8a3 35%, #eab308 60%, #a16207 100%);display:grid;place-items:center;font-weight:800;color:#1f2937;border:4px solid rgba(255,255,255,.7);cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4), 0 0 0 8px rgba(255,209,102,.15);}
+    .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+    .btn{cursor:pointer;border:none;border-radius:14px;padding:14px 18px;font-weight:700;font-size:16px}
+    .btn-primary{background:linear-gradient(135deg,var(--accent2), #a78bfa);color:white;box-shadow:0 8px 18px rgba(124,58,237,.35)}
+    .btn-ghost{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.14)}
+    .btn:active{transform:translateY(1px)}
+    .card{background:rgba(27,29,58,.6);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:18px;margin-top:20px;max-width:600px;width:100%}
+    .tags{display:flex;flex-wrap:wrap;gap:8px}
+    .tag{padding:8px 12px;border-radius:999px;border:1px dashed rgba(255,255,255,.18);opacity:.9}
+    details summary{cursor:pointer;font-weight:600}
+    textarea{width:100%;padding:10px;border-radius:12px;background:#0f1229;color:var(--text);border:1px solid rgba(255,255,255,.12);margin-top:10px}
+    .footer{opacity:.65;text-align:center;margin:24px 0;font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>🎡 Весёлая рулетка: <span style="color:var(--accent)">чем заняться?</span></h1>
+  <div class="subtitle">Нажми «Крутить» — и судьба (и немного математики) решат за тебя 😄</div>
+  <div class="wheel-wrap">
+    <canvas id="wheel" width="900" height="900"></canvas>
+    <div class="pin"></div>
+    <div class="center-cap" id="centerSpin">Крутить!</div>
+  </div>
+  <div class="controls">
+    <button class="btn btn-primary" id="spinBtn">🎉 Крутить</button>
+    <button class="btn btn-ghost" id="shuffleBtn">🔀 Перемешать</button>
+    <button class="btn btn-ghost" id="copyBtn">📋 Скопировать</button>
+  </div>
+
+  <div class="card">
+    <h2>Категории на рулетке</h2>
+    <div id="tags" class="tags"></div>
+    <details>
+      <summary>Изменить список</summary>
+      <textarea id="editor" rows="8"></textarea>
+      <button class="btn btn-primary" id="applyBtn">Сохранить</button>
+      <button class="btn btn-ghost" id="resetBtn">Сбросить</button>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Как это работает</h2>
+    <p>Колесо делится на сектора по числу категорий. При нажатии «Крутить» колесо вращается с ускорением и плавным торможением. Когда оно останавливается, стрелка указывает на выбранный вариант 🎯</p>
+  </div>
+
+  <div class="footer">Сделано с ❤️ и JavaScript</div>
+
+  <script>
+    const wheelCanvas=document.getElementById('wheel');
+    const ctx=wheelCanvas.getContext('2d');
+    const centerSpin=document.getElementById('centerSpin');
+    const spinBtn=document.getElementById('spinBtn');
+    const shuffleBtn=document.getElementById('shuffleBtn');
+    const copyBtn=document.getElementById('copyBtn');
+    const editor=document.getElementById('editor');
+    const applyBtn=document.getElementById('applyBtn');
+    const resetBtn=document.getElementById('resetBtn');
+    const tags=document.getElementById('tags');
+
+    let items=["Смотреть кино","Слушать музыку","Учиться","Смотреть YouTube","Слушать подкаст","Заняться спортом","Читать книгу","Сходить в кафе/ресторан","Написать/позвонить другу/подруге","Приготовить еду","Убраться дома","Сделать дела, которые давно планировал","Дейтинг","Помечтать","Помолиться","Медитация/Йога"];
+
+    let angle=0; let spinning=false;
+
+    function drawWheel(){
+      const n=items.length;
+      const step=2*Math.PI/n;
+      const r=wheelCanvas.width/2;
+      ctx.clearRect(0,0,wheelCanvas.width,wheelCanvas.height);
+      const colors=['#f97316','#06d6a0','#3b82f6','#f43f5e','#ffd166','#a855f7','#22c55e','#e11d48'];
+      for(let i=0;i<n;i++){
+        const start=angle+i*step;
+        const end=start+step;
+        ctx.beginPath();
+        ctx.moveTo(r,r);
+        ctx.arc(r,r,r-4,start,end);
+        ctx.closePath();
+        ctx.fillStyle=colors[i%colors.length];
+        ctx.fill();
+        ctx.save();
+        ctx.translate(r,r);
+        ctx.rotate(start+step/2);
+        ctx.textAlign='right';
+        ctx.fillStyle='#0b0c1a';
+        ctx.font='700 24px Rubik';
+        ctx.fillText(items[i],r-20,10);
+        ctx.restore();
+      }
+    }
+
+    function spin(){
+      if(spinning)return; spinning=true;
+      const n=items.length;
+      const targetIndex=Math.floor(Math.random()*n);
+      const step=2*Math.PI/n;
+      const targetAngle=(Math.PI*1.5)-(targetIndex*step+step/2);
+      const fullTurns=(Math.PI*2)*(5+Math.floor(Math.random()*4));
+      const finalAngle=targetAngle+fullTurns;
+      const start=performance.now();
+      const duration=4000;
+      const startAngle=angle;
+      function animate(now){
+        const t=Math.min(1,(now-start)/duration);
+        const eased=1-Math.pow(1-t,3);
+        angle=startAngle+(finalAngle-startAngle)*eased;
+        drawWheel();
+        if(t<1)requestAnimationFrame(animate);else{
+          spinning=false;
+          angle%=2*Math.PI;
+          const idx=Math.floor(((Math.PI*1.5-angle+2*Math.PI)%(2*Math.PI))/(2*Math.PI/n));
+          alert('🎯 Сегодня: '+items[idx]);
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+    function renderTags(){tags.innerHTML='';items.forEach(x=>{const t=document.createElement('span');t.className='tag';t.textContent=x;tags.appendChild(t);});}
+
+    function updateEditor(){editor.value=items.join('\n');}
+
+    applyBtn.onclick=()=>{const lines=editor.value.split(/\n+/).map(x=>x.trim()).filter(Boolean);if(lines.length){items=lines;drawWheel();renderTags();localStorage.setItem('wheelItems',JSON.stringify(items));}};
+    resetBtn.onclick=()=>{items=["Смотреть кино","Слушать музыку","Учиться","Смотреть YouTube","Слушать подкаст","Заняться спортом","Читать книгу","Сходить в кафе/ресторан","Написать/позвонить другу/подруге","Приготовить еду","Убраться дома","Сделать дела, которые давно планировал","Дейтинг","Помечтать","Помолиться","Медитация/Йога"];drawWheel();renderTags();updateEditor();};
+
+    spinBtn.onclick=spin; centerSpin.onclick=spin; shuffleBtn.onclick=()=>{items=shuffle(items);drawWheel();renderTags();}; copyBtn.onclick=()=>{navigator.clipboard.writeText('Сегодня: '+items[Math.floor(Math.random()*items.length)]).then(()=>alert('Скопировано!'));};
+
+    if(localStorage.getItem('wheelItems'))items=JSON.parse(localStorage.getItem('wheelItems'));
+    drawWheel();renderTags();updateEditor();
+  </script>
+</body>
+</html>
